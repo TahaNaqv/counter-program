@@ -12,9 +12,25 @@ pub mod counter_program {
         Ok(())
     }
 
-    pub fn increment(ctx: Context<Increment>) -> Result<()> {
+    pub fn increment(ctx: Context<UpdateCounter>) -> Result<()> {
         ctx.accounts.counter.count += 1;
         msg!("Counter is now: {}", ctx.accounts.counter.count);
+        Ok(())
+    }
+
+    pub fn decrement(ctx: Context<UpdateCounter>) -> Result<()> {
+        ctx.accounts.counter.count = ctx.accounts.counter.count.saturating_sub(1);
+        msg!("Counter is now: {}", ctx.accounts.counter.count);
+        Ok(())
+    }
+
+    pub fn reset(ctx: Context<UpdateCounter>) -> Result<()> {
+        ctx.accounts.counter.count = 0;
+        msg!("Counter reset to 0");
+        Ok(())
+    }
+
+    pub fn close(_ctx: Context<Close>) -> Result<()> {
         Ok(())
     }
 }
@@ -42,9 +58,22 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Increment<'info> {
+pub struct UpdateCounter<'info> {
     #[account(
         mut,
+        seeds = [b"counter", user.key().as_ref()],
+        bump,
+    )]
+    pub counter: Account<'info, Counter>,
+
+    pub user: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct Close<'info> {
+    #[account(
+        mut,
+        close = user,
         seeds = [b"counter", user.key().as_ref()],
         bump,
     )]

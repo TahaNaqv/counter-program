@@ -7,10 +7,48 @@ pub mod counter_program {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        msg!("Greetings from: {:?}", ctx.program_id);
+        ctx.accounts.counter.count = 0;
+        msg!("Counter initialized!");
+        Ok(())
+    }
+
+    pub fn increment(ctx: Context<Increment>) -> Result<()> {
+        ctx.accounts.counter.count += 1;
+        msg!("Counter is now: {}", ctx.accounts.counter.count);
         Ok(())
     }
 }
 
+#[account]
+pub struct Counter {
+    pub count: u64,
+}
+
 #[derive(Accounts)]
-pub struct Initialize {}
+pub struct Initialize<'info> {
+    #[account(
+        init,
+        payer = user,
+        space = 8 + 8,
+        seeds = [b"counter", user.key().as_ref()],
+        bump
+    )]
+    pub counter: Account<'info, Counter>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Increment<'info> {
+    #[account(
+        mut,
+        seeds = [b"counter", user.key().as_ref()],
+        bump,
+    )]
+    pub counter: Account<'info, Counter>,
+
+    pub user: Signer<'info>,
+}

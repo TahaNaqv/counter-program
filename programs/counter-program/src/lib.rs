@@ -8,35 +8,61 @@ pub mod counter_program {
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         ctx.accounts.counter.count = 0;
+        emit!(CounterUpdated {
+            user: ctx.accounts.user.key(),
+            count: 0,
+        });
         msg!("Counter initialized!");
         Ok(())
     }
 
     pub fn increment(ctx: Context<UpdateCounter>) -> Result<()> {
         ctx.accounts.counter.count += 1;
+        emit!(CounterUpdated {
+            user: ctx.accounts.user.key(),
+            count: ctx.accounts.counter.count,
+        });
         msg!("Counter is now: {}", ctx.accounts.counter.count);
         Ok(())
     }
 
     pub fn decrement(ctx: Context<UpdateCounter>) -> Result<()> {
         ctx.accounts.counter.count = ctx.accounts.counter.count.saturating_sub(1);
+        emit!(CounterUpdated {
+            user: ctx.accounts.user.key(),
+            count: ctx.accounts.counter.count,
+        });
         msg!("Counter is now: {}", ctx.accounts.counter.count);
         Ok(())
     }
 
     pub fn reset(ctx: Context<UpdateCounter>) -> Result<()> {
         ctx.accounts.counter.count = 0;
+        emit!(CounterUpdated {
+            user: ctx.accounts.user.key(),
+            count: 0,
+        });
         msg!("Counter reset to 0");
         Ok(())
     }
 
-    pub fn close(_ctx: Context<Close>) -> Result<()> {
+    pub fn close(ctx: Context<Close>) -> Result<()> {
+        emit!(CounterUpdated {
+            user: ctx.accounts.user.key(),
+            count: ctx.accounts.counter.count,
+        });
         Ok(())
     }
 }
 
 #[account]
 pub struct Counter {
+    pub count: u64,
+}
+
+#[event]
+pub struct CounterUpdated {
+    pub user: Pubkey,
     pub count: u64,
 }
 

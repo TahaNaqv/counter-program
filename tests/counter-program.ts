@@ -82,4 +82,32 @@ describe("counter-program", () => {
     const counter = await program.account.counter.fetch(counterPda);
     expect(counter.count.toNumber()).to.equal(0);
   });
+
+  it("Emits counterUpdated event on increment", async () => {
+    const eventPromise = new Promise<{ user: any; count: any }>(
+      (resolve, reject) => {
+        const timeout = setTimeout(() => {
+          program.removeEventListener(listenerId);
+          reject(new Error("Event timeout"));
+        }, 5000);
+
+        const listenerId = program.addEventListener(
+          "counterUpdated",
+          (event: { user: any; count: any }) => {
+            clearTimeout(timeout);
+            program.removeEventListener(listenerId);
+            resolve(event);
+          },
+          "confirmed"
+        );
+      }
+    );
+
+    await program.methods.increment().rpc();
+
+    const event = await eventPromise;
+
+    expect(event.user.toBase58()).to.equal(provider.publicKey.toBase58());
+    expect(event.count.toNumber()).to.be.greaterThanOrEqual(0);
+  });
 });
